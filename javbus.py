@@ -7,10 +7,10 @@ class JavbusSpider(object):
 		self.headers = {
 			"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.130 Safari/537.36 OPR/45.0.2257.46"
 			}
-		self.base_url = "https://www.javbus.com"
+		self.base_url = "https://www.javbus.com/page/{}"
 
-	def get_movie_url(self):
-		response = requests.get(self.base_url, headers=self.headers)
+	def get_movie_url(self, index_url):
+		response = requests.get(index_url, headers=self.headers)
 		if response.status_code == 200:
 			html = response.text
 			soup = BeautifulSoup(html, "lxml")
@@ -106,11 +106,15 @@ class JavbusSpider(object):
 			
 		else:
 			print(response.status_code, " detailed page error.")
+	
+	
 	def RunSpider(self):
-		movie_info = self.get_movie_url()
-		for key,value in movie_info.items():
-			movie_url = value
-			self.get_movie_info(movie_url)
+		for i in range(1, 148):
+			index_url = self.base_url.format(i)
+			movie_info = self.get_movie_url(index_url)
+			for key,value in movie_info.items():
+				movie_url = value
+				self.get_movie_info(movie_url)
 
 
 if __name__ == "__main__":
