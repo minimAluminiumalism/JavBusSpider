@@ -137,7 +137,9 @@ class JavSpider(object):
 			print(response.status_code, " detailed page error.")
 
 	def RunSpider(self):
-		for i in range(1, 11):
+		start_page = input("start page:")
+		end_page = input("end page:")
+		for i in range(int(start_page), int(end_page)+1):
 			index_url = self.base_url.format(i)
 			actress_info = self.get_all_actresses(index_url)
 			for actress_url in actress_info.values():
