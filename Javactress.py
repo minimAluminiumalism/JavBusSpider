@@ -1,48 +1,63 @@
 import requests
 import re
-import csv
 from bs4 import BeautifulSoup
+import csv
+import json
 
 
-
-with open("JavbusMovieInfo.csv","w") as csvfile:
-	writer = csv.writer(csvfile)
-	writer.writerow(["Title", "UUID", "Release_Time", "Duration", "Director", "Producer", "Issurer", "Type_Series", "Actress", "Magnet", "Img_URL"])
-
-
-class JavbusSpider(object):
+class JavSpider(object):
 	def __init__(self):
 		self.headers = {
 			"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.130 Safari/537.36 OPR/45.0.2257.46"
 			}
-		self.base_url = "https://www.javbus.com/page/{}"
+		self.base_url = "https://www.javbus.com/actresses/{}"
 
-	def get_movie_url(self, index_url):
+	def get_all_actresses(self, index_url):
 		response = requests.get(index_url, headers=self.headers)
+		html = response.text
+		soup = BeautifulSoup(html , "lxml")
+		items = soup.find_all("a", class_="avatar-box text-center")
+		actress_info = {}
+		
+		for item in items:
+			actress_url = item["href"]
+			actress_name = item.find("span").text
+			actress_info[actress_name] = actress_url
+		return actress_info
+
+
+	def get_all_pages(self, actress_url):
+		page_url_list = []
+		index = 1
+		while index < 20:
+			actress_URL = actress_url + "/" + str(index)
+			html = requests.get(actress_URL, headers=self.headers).text
+			soup = BeautifulSoup(html, "lxml")
+			alert = soup.find("div", class_="alert alert-danger alert-page error-page")
+			if alert:
+				break
+			else:
+				page_url_list.append(actress_URL)
+				index += 1
+		
+		return page_url_list
+
+	def get_onepage_movies(self, multiple_movies_url):
+		response = requests.get(multiple_movies_url, headers=self.headers)
 		if response.status_code == 200:
 			html = response.text
 			soup = BeautifulSoup(html, "lxml")
-			movie_urls = soup.find_all("a", class_="movie-box")
-			movie_info = {}
-			movie_info_url = []
-			for movie_url in movie_urls:
-				movie_url = movie_url["href"]
-				movie_info_url.append(movie_url)
-			title_block = soup.find_all("div", class_="photo-info")
-			movie_info_title = []
-			for item in title_block:
-				pattern = re.compile("<span>(.*?)<br", re.S)
-				title = re.search(pattern, str(item)).group(1)
-				movie_info_title.append(title)
-			
-			for (title, url) in zip(movie_info_title, movie_info_url):
-				movie_info[title] = url
+			items = soup.find_all("a", class_="movie-box")
+			movie_url_list = []
+			for item in items:
+				movie_url = item["href"]
+				movie_url_list.append(movie_url)
 
-			return movie_info
-
+			return movie_url_list
 		else:
-			print(response.status_code, " index page error.")
+			print(response.status_code, " error.")
 			return None
+
 
 	def get_movie_info(self, movie_url):
 		response = requests.get(movie_url, headers=self.headers)
@@ -118,20 +133,21 @@ class JavbusSpider(object):
 			with open("JavbusMovieInfo.csv", "a", encoding="UTF-8") as csvfile:
 				writer = csv.writer(csvfile)
 				writer.writerow([Title, UUID, Release_Time, Duration, Director, Producer, Issurer, Type_Series, Actress, magnet_url_list, img_url])
-			
 		else:
 			print(response.status_code, " detailed page error.")
-	
-	
-	def RunSpider(self):			
-		for i in range(1, 148):
+
+	def RunSpider(self):
+		for i in range(1, 11):
 			index_url = self.base_url.format(i)
-			movie_info = self.get_movie_url(index_url)
-			for key,value in movie_info.items():
-				movie_url = value
-				self.get_movie_info(movie_url)
-
-
+			actress_info = self.get_all_actresses(index_url)
+			for actress_url in actress_info.values():
+				page_url_list = self.get_all_pages(actress_url)
+				for multiple_movies_url in page_url_list:
+					print(multiple_movies_url)
+					movie_url_list = self.get_onepage_movies(multiple_movies_url)
+					for movie_url in movie_url_list:
+						self.get_movie_info(movie_url)
+			
 if __name__ == "__main__":
-	Jav_Spider = JavbusSpider()
-	Jav_Spider.RunSpider()
+	JavSpider = JavSpider()
+	JavSpider.RunSpider()
