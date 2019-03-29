@@ -1,6 +1,14 @@
 import requests
 import re
+import csv
 from bs4 import BeautifulSoup
+
+
+
+with open("JavbusMovieInfo.csv","w") as csvfile:
+	writer = csv.writer(csvfile)
+	writer.writerow(["Title", "UUID", "Release_Time", "Duration", "Director", "Producer", "Issurer", "Type_Series", "Actress", "Magnet", "Img_URL"])
+
 
 class JavbusSpider(object):
 	def __init__(self):
@@ -103,12 +111,15 @@ class JavbusSpider(object):
 			movie_detailed_info["Img"] = img_url
 			
 			print(movie_detailed_info)
+			with open("JavbusMovieInfo.csv", "a", encoding="UTF-8") as csvfile:
+				writer = csv.writer(csvfile)
+				writer.writerow([Title, UUID, Release_Time, Duration, Director, Producer, Issurer, Type_Series, Actress, magnet_url_list, img_url])
 			
 		else:
 			print(response.status_code, " detailed page error.")
 	
 	
-	def RunSpider(self):
+	def RunSpider(self):			
 		for i in range(1, 148):
 			index_url = self.base_url.format(i)
 			movie_info = self.get_movie_url(index_url)
