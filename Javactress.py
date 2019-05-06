@@ -129,7 +129,7 @@ class JavSpider(object):
 			
 			movie_detailed_info["Img"] = img_url
 			
-			print(movie_detailed_info)
+			print(movie_detailed_info["Title"])
 			with open("JavbusMovieInfo.csv", "a", encoding="UTF-8") as csvfile:
 				writer = csv.writer(csvfile)
 				writer.writerow([Title, UUID, Release_Time, Duration, Director, Producer, Issurer, Type_Series, Actress, magnet_url_list, img_url])
